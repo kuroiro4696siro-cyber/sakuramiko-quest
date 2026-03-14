@@ -54,15 +54,16 @@
 
   <!-- ホーム画面 -->
   <section class="screen active" id="screenHome">
-    <div class="screen-title">
-      <span class="title-deco">🌸</span> クエスト一覧 <span class="title-deco">🌸</span>
+    <!-- タブ -->
+    <div class="quest-tabs">
+      <button class="quest-tab active" data-tab="today">📅 本日</button>
+      <button class="quest-tab" data-tab="all">📋 一覧</button>
+      <button class="quest-tab" data-tab="cleared">✨ 達成済み</button>
     </div>
-    <div class="quest-list" id="questList">
-      <!-- クエストカードがここに挿入される -->
-    </div>
+    <div class="quest-list" id="questList"></div>
     <div class="empty-state" id="emptyState" style="display:none">
       <div class="empty-icon">📜</div>
-      <div class="empty-text">クエストがありません<br>新しいクエストを追加しましょう！</div>
+      <div class="empty-text" id="emptyText">クエストがありません<br>新しいクエストを追加しましょう！</div>
     </div>
     <button class="fab-btn" id="addQuestBtn" aria-label="クエスト追加">
       <span>＋</span>

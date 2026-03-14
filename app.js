@@ -629,26 +629,70 @@ const UI = (() => {
     document.getElementById('statClearedQuests').textContent = p.clearedQuests || 0;
   }
 
+  // --- タブ管理 ---
+  let currentTab = 'today';
+
+  function initTabs() {
+    document.querySelectorAll('.quest-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.quest-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTab = btn.dataset.tab;
+        renderQuestList();
+      });
+    });
+  }
+
   // --- クエスト一覧レンダリング ---
   function renderQuestList() {
     const list = document.getElementById('questList');
     const empty = document.getElementById('emptyState');
-    const quests = QuestManager.getAll();
+    const emptyText = document.getElementById('emptyText');
+    const allQuests = QuestManager.getAll();
     list.innerHTML = '';
 
-    if (quests.length === 0) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+
+    let filtered;
+    if (currentTab === 'today') {
+      // 本日: 期限が今日 or 期限なし、かつアクティブ
+      filtered = allQuests.filter(q => {
+        if (q.status === 'cleared') return false;
+        if (!q.deadline) return true;
+        const dl = new Date(q.deadline);
+        return dl < tomorrow; // 今日以前（期限切れ含む）
+      }).sort((a, b) => {
+        // 期限あり優先、次に作成日降順
+        if (a.deadline && !b.deadline) return -1;
+        if (!a.deadline && b.deadline) return 1;
+        return b.createdAt - a.createdAt;
+      });
+      emptyText.innerHTML = '本日のクエストはありません<br>＋ボタンで追加しましょう！';
+    } else if (currentTab === 'all') {
+      // 一覧: アクティブなクエスト全て
+      filtered = allQuests.filter(q => q.status !== 'cleared')
+        .sort((a, b) => {
+          if (a.deadline && !b.deadline) return -1;
+          if (!a.deadline && b.deadline) return 1;
+          if (a.deadline && b.deadline) return new Date(a.deadline) - new Date(b.deadline);
+          return b.createdAt - a.createdAt;
+        });
+      emptyText.innerHTML = 'クエストがありません<br>＋ボタンで追加しましょう！';
+    } else {
+      // 達成済み: clearedなクエスト
+      filtered = allQuests.filter(q => q.status === 'cleared')
+        .sort((a, b) => (b.clearedAt || 0) - (a.clearedAt || 0));
+      emptyText.innerHTML = 'まだ達成済みのクエストはありません';
+    }
+
+    if (filtered.length === 0) {
       empty.style.display = 'block';
       return;
     }
     empty.style.display = 'none';
 
-    // アクティブ優先で並べ替え
-    const sorted = [...quests].sort((a, b) => {
-      if (a.status === b.status) return b.createdAt - a.createdAt;
-      return a.status === 'cleared' ? 1 : -1;
-    });
-
-    sorted.forEach((q, i) => {
+    filtered.forEach((q, i) => {
       const card = createQuestCard(q);
       card.style.animationDelay = `${i * 0.05}s`;
       list.appendChild(card);
@@ -657,38 +701,58 @@ const UI = (() => {
 
   function createQuestCard(q) {
     const card = document.createElement('div');
-    card.className = `quest-card ${q.status === 'cleared' ? 'cleared' : ''}`;
+    const isCleared = q.status === 'cleared';
+    card.className = `quest-card ${isCleared ? 'cleared' : ''}`;
     card.dataset.id = q.id;
 
     const progress = QuestManager.getSubquestProgress(q);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+
     let deadlineHtml = '';
     if (q.deadline) {
       const dl = new Date(q.deadline);
-      const today = new Date(); today.setHours(0,0,0,0);
-      const isOverdue = dl < today && q.status !== 'cleared';
+      const isOverdue = dl < today && !isCleared;
       const dlStr = `${dl.getMonth()+1}/${dl.getDate()}`;
       deadlineHtml = `<span class="quest-deadline ${isOverdue ? 'overdue' : ''}">📅 ${dlStr}</span>`;
     }
 
     const progressStr = progress ? `📋 ${progress.done}/${progress.total}` : '';
 
+    // クリア済みスタンプHTML（達成済みタブのみ表示）
+    const stampHtml = isCleared ? `
+      <div class="card-stamp-wrap">
+        <img src="assets/effects/quest-clear-stamp.png" alt="CLEAR"
+             class="card-stamp-img"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="card-stamp-fallback">CLEAR</div>
+      </div>` : '';
+
+    // クリア日時
+    let clearedDateHtml = '';
+    if (isCleared && q.clearedAt) {
+      const cd = new Date(q.clearedAt);
+      clearedDateHtml = `<span class="quest-cleared-date">✨ ${cd.getMonth()+1}/${cd.getDate()} 達成</span>`;
+    }
+
     card.innerHTML = `
-      <div class="quest-card-top">
-        <div class="quest-card-title">${escapeHtml(q.title)}</div>
-        <span class="quest-status-badge ${q.status === 'cleared' ? 'status-cleared' : 'status-active'}">
-          ${q.status === 'cleared' ? '✨ CLEAR' : '⚔️ 進行中'}
-        </span>
-      </div>
-      <div class="quest-card-meta">
-        ${deadlineHtml}
-        ${progressStr ? `<span>${progressStr}</span>` : ''}
-        <span>⭐ ${q.exp} EXP</span>
-      </div>
-      ${progress ? `
-        <div class="quest-progress-bar-wrap">
-          <div class="quest-progress-bar" style="width:${(progress.done/progress.total)*100}%"></div>
+      <div class="quest-card-inner">
+        <div class="quest-card-main">
+          <div class="quest-card-top">
+            <div class="quest-card-title">${escapeHtml(q.title)}</div>
+          </div>
+          <div class="quest-card-meta">
+            ${deadlineHtml}
+            ${clearedDateHtml}
+            ${progressStr ? `<span>${progressStr}</span>` : ''}
+            <span>⭐ ${q.exp} EXP</span>
+          </div>
+          ${progress ? `
+            <div class="quest-progress-bar-wrap">
+              <div class="quest-progress-bar" style="width:${(progress.done/progress.total)*100}%"></div>
+            </div>` : ''}
         </div>
-      ` : ''}
+        ${stampHtml}
+      </div>
     `;
 
     card.addEventListener('click', () => openDetail(q.id));
@@ -852,6 +916,13 @@ const UI = (() => {
     // レベルアップ演出
     await sleep(2500);
     hideClearOverlay();
+
+    // クリア後は「達成済み」タブに切り替え
+    document.querySelectorAll('.quest-tab').forEach(b => b.classList.remove('active'));
+    const clearedTab = document.querySelector('.quest-tab[data-tab="cleared"]');
+    if (clearedTab) clearedTab.classList.add('active');
+    currentTab = 'cleared';
+    renderQuestList();
 
     if (expResult.leveledUp) {
       for (const newLevel of expResult.levelUpData) {
@@ -1134,7 +1205,8 @@ const UI = (() => {
     showScreen, updateProfileBar, renderQuestList, openDetail,
     openAddModal, openEditModal, closeModal, saveQuest, addPendingSubquest,
     initSettings, bindSettingsEvents, setCurrentChar, getCurrentChar,
-    showToast, showConfirm, handleSubquestComplete, handleQuestComplete
+    showToast, showConfirm, handleSubquestComplete, handleQuestComplete,
+    initTabs
   };
 })();
 
@@ -1283,6 +1355,7 @@ async function initApp() {
 
     // UI初期化
     UI.updateProfileBar();
+    UI.initTabs();
     UI.renderQuestList();
 
     // キャラクター初期設定（相対パス）
