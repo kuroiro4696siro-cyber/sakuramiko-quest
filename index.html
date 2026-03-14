@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="みこクエスト">
+  <meta name="theme-color" content="#f9a8c9">
+  <title>みこクエスト</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="icon" href="assets/icons/icon-192.png">
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Kaisei+Decol:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ========== 背景 ========== -->
+<div class="bg-layer">
+  <div class="bg-image"></div>
+  <div class="bg-overlay"></div>
+  <div class="sakura-container" id="sakuraContainer"></div>
+</div>
+
+<!-- ========== ヘッダー ========== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="app-logo">⛩️ みこクエスト</div>
+  </div>
+  <div class="header-right">
+    <button class="icon-btn" id="settingsBtn" aria-label="設定">⚙️</button>
+  </div>
+</header>
+
+<!-- ========== プロフィールバー ========== -->
+<div class="profile-bar" id="profileBar">
+  <div class="level-badge">
+    <span class="level-label">Lv.</span>
+    <span class="level-num" id="profileLevel">1</span>
+  </div>
+  <div class="exp-area">
+    <div class="exp-text">
+      <span id="profileExpCurrent">0</span> / <span id="profileExpNext">100</span> EXP
+    </div>
+    <div class="exp-bar-wrap">
+      <div class="exp-bar-fill" id="profileExpBar" style="width:0%"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== メインコンテンツ ========== -->
+<main class="main-content" id="mainContent">
+
+  <!-- ホーム画面 -->
+  <section class="screen active" id="screenHome">
+    <div class="screen-title">
+      <span class="title-deco">🌸</span> クエスト一覧 <span class="title-deco">🌸</span>
+    </div>
+    <div class="quest-list" id="questList">
+      <!-- クエストカードがここに挿入される -->
+    </div>
+    <div class="empty-state" id="emptyState" style="display:none">
+      <div class="empty-icon">📜</div>
+      <div class="empty-text">クエストがありません<br>新しいクエストを追加しましょう！</div>
+    </div>
+    <button class="fab-btn" id="addQuestBtn" aria-label="クエスト追加">
+      <span>＋</span>
+    </button>
+  </section>
+
+  <!-- クエスト詳細画面 -->
+  <section class="screen" id="screenDetail">
+    <div class="back-bar">
+      <button class="back-btn" id="backBtn">← 戻る</button>
+    </div>
+    <div class="quest-detail-card" id="detailCard">
+      <!-- 動的に挿入 -->
+    </div>
+  </section>
+
+  <!-- 設定画面 -->
+  <section class="screen" id="screenSettings">
+    <div class="back-bar">
+      <button class="back-btn" id="settingsBackBtn">← 戻る</button>
+    </div>
+    <div class="settings-container">
+      <div class="settings-section">
+        <div class="settings-title">🔊 サウンド設定</div>
+        <div class="settings-item">
+          <label>BGM</label>
+          <div class="toggle-group">
+            <label class="toggle-switch">
+              <input type="checkbox" id="bgmToggle">
+              <span class="toggle-knob"></span>
+            </label>
+            <input type="range" id="bgmVolume" min="0" max="100" value="50" class="volume-slider">
+          </div>
+        </div>
+        <div class="settings-item">
+          <label>SE全体</label>
+          <div class="toggle-group">
+            <label class="toggle-switch">
+              <input type="checkbox" id="seToggle" checked>
+              <span class="toggle-knob"></span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-item">
+          <label>クエストクリアSE</label>
+          <input type="range" id="questClearVolume" min="0" max="100" value="80" class="volume-slider">
+        </div>
+        <div class="settings-item">
+          <label>サブクエストクリアSE</label>
+          <input type="range" id="subQuestClearVolume" min="0" max="100" value="70" class="volume-slider">
+        </div>
+        <div class="settings-item">
+          <label>レベルアップSE</label>
+          <input type="range" id="levelUpVolume" min="0" max="100" value="90" class="volume-slider">
+        </div>
+        <div class="settings-item">
+          <label>キャラボイス</label>
+          <input type="range" id="voiceVolume" min="0" max="100" value="80" class="volume-slider">
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">🎭 キャラクター設定</div>
+        <div class="char-select-grid" id="charSelectGrid">
+          <!-- キャラ選択 -->
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">📊 プロフィール</div>
+        <div class="profile-stats">
+          <div class="stat-row">
+            <span>現在レベル</span><span id="statLevel">1</span>
+          </div>
+          <div class="stat-row">
+            <span>総獲得EXP</span><span id="statTotalExp">0</span>
+          </div>
+          <div class="stat-row">
+            <span>クリア済みクエスト</span><span id="statClearedQuests">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section danger-section">
+        <div class="settings-title">⚠️ データ管理</div>
+        <button class="danger-btn" id="resetDataBtn">全データリセット</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ========== キャラクター立ち絵 ========== -->
+<div class="character-container" id="characterContainer">
+  <div class="character-wrap" id="characterWrap">
+    <img src="assets/characters/character-default.png" alt="キャラクター"
+         class="character-img" id="characterImg"
+         onerror="this.style.display='none'; document.getElementById('charFallback').style.display='flex'">
+    <div class="char-fallback" id="charFallback">
+      <div class="char-emoji">🌸</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== モーダル: クエスト追加/編集 ========== -->
+<div class="modal-overlay" id="questModal">
+  <div class="modal-card">
+    <div class="modal-title" id="modalTitle">📜 新しいクエスト</div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>クエスト名 *</label>
+        <input type="text" id="questTitleInput" placeholder="クエストのタイトルを入力..." maxlength="50">
+      </div>
+      <div class="form-group">
+        <label>期限</label>
+        <input type="date" id="questDeadlineInput">
+      </div>
+      <div class="form-group">
+        <label>獲得EXP（親クエスト）</label>
+        <input type="number" id="questExpInput" value="50" min="1" max="9999">
+      </div>
+      <div class="form-group">
+        <label>サブクエスト</label>
+        <div class="subquest-input-area">
+          <div class="subquest-input-row">
+            <input type="text" id="subQuestTitleInput" placeholder="サブクエスト名..." maxlength="40">
+            <input type="number" id="subQuestExpInput" placeholder="EXP" value="10" min="1" max="999" style="width:70px">
+            <button class="add-sub-btn" id="addSubQuestBtn">＋</button>
+          </div>
+          <div class="subquest-preview-list" id="subQuestPreviewList"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" id="modalCancelBtn">キャンセル</button>
+      <button class="modal-save-btn" id="modalSaveBtn">✨ 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== クエストクリア演出 ========== -->
+<div class="clear-overlay" id="clearOverlay">
+  <div class="clear-overlay-bg"></div>
+  <div class="clear-content">
+    <div class="clear-stamp-wrap" id="clearStampWrap">
+      <img src="assets/effects/quest-clear-stamp.png" alt="CLEAR"
+           class="clear-stamp" id="clearStamp"
+           onerror="this.style.display='none'; document.getElementById('clearStampFallback').style.display='flex'">
+      <div class="clear-stamp-fallback" id="clearStampFallback">
+        <div class="clear-stamp-text">QUEST<br>CLEAR!</div>
+      </div>
+    </div>
+    <div class="clear-exp-gain" id="clearExpGain">+50 EXP</div>
+  </div>
+  <div class="clear-sakura-container" id="clearSakuraContainer"></div>
+</div>
+
+<!-- ========== レベルアップ演出 ========== -->
+<div class="levelup-overlay" id="levelupOverlay">
+  <div class="levelup-bg"></div>
+  <div class="levelup-content">
+    <div class="levelup-text-wrap">
+      <div class="levelup-label">LEVEL UP!</div>
+      <div class="levelup-num" id="levelupNum">2</div>
+    </div>
+    <div class="levelup-exp-info" id="levelupExpInfo">EXP: 100 / 150</div>
+  </div>
+  <div class="levelup-particles" id="levelupParticles"></div>
+</div>
+
+<!-- ========== 確認ダイアログ ========== -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-card confirm-card">
+    <div class="modal-title" id="confirmTitle">確認</div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel-btn" id="confirmCancelBtn">キャンセル</button>
+      <button class="modal-save-btn danger" id="confirmOkBtn">実行</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== トースト通知 ========== -->
+<div class="toast" id="toast"></div>
+
+<!-- ========== オーディオ ========== -->
+<audio id="audioBgm" loop></audio>
+<audio id="audioQuestClear"></audio>
+<audio id="audioSubClear"></audio>
+<audio id="audioLevelUp"></audio>
+<audio id="audioVoice"></audio>
+
+<script src="app.js"></script>
+</body>
+</html>
