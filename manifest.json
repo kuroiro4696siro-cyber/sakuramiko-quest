@@ -2,7 +2,7 @@
   "name": "みこクエスト",
   "short_name": "みこクエスト",
   "description": "日常タスクをクエストで管理！巫女モチーフのクエスト管理アプリ",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#f9a8c9",

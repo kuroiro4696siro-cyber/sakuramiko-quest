@@ -99,13 +99,22 @@ const Sound = (() => {
     voice: document.getElementById('audioVoice')
   };
 
+  // 相対パス: index.htmlからの相対で解決されるため、サブディレクトリ配置でも動作する
+  const BASE = (() => {
+    const s = document.currentScript ? document.currentScript.src : '';
+    return s ? s.replace(/\/[^/]*$/, '/') : './';
+  })();
   const SRC = {
-    bgm: 'assets/audio/main-bgm.mp3',
-    questClear: 'assets/audio/quest-clear.mp3',
-    subClear: 'assets/audio/subquest-clear.mp3',
-    levelUp: 'assets/audio/level-up.mp3',
-    voices: ['assets/audio/character/voice01.mp3', 'assets/audio/character/voice02.mp3',
-             'assets/audio/character/voice03.mp3', 'assets/audio/character/voice04.mp3']
+    bgm: BASE + 'assets/audio/main-bgm.mp3',
+    questClear: BASE + 'assets/audio/quest-clear.mp3',
+    subClear: BASE + 'assets/audio/subquest-clear.mp3',
+    levelUp: BASE + 'assets/audio/level-up.mp3',
+    voices: [
+      BASE + 'assets/audio/character/voice01.mp3',
+      BASE + 'assets/audio/character/voice02.mp3',
+      BASE + 'assets/audio/character/voice03.mp3',
+      BASE + 'assets/audio/character/voice04.mp3'
+    ]
   };
 
   let settings = {
@@ -979,12 +988,12 @@ async function initApp() {
     UI.updateProfileBar();
     UI.renderQuestList();
 
-    // キャラクター初期設定
+    // キャラクター初期設定（相対パス）
     const charId = UI.getCurrentChar();
     const charSrc = {
       'default': 'assets/characters/character-default.png',
-      'alt1': 'assets/characters/character-alt1.png',
-      'alt2': 'assets/characters/character-alt2.png'
+      'alt1':    'assets/characters/character-alt1.png',
+      'alt2':    'assets/characters/character-alt2.png'
     }[charId] || 'assets/characters/character-default.png';
     document.getElementById('characterImg').src = charSrc;
 

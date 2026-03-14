@@ -4,35 +4,36 @@
  */
 
 const CACHE_NAME = 'mikoquest-v1.1';
+
+// sw.jsと同じディレクトリを起点とした相対パスでキャッシュ
+// これにより /sakuramiko-quest/ などサブディレクトリ配置でも動作する
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/app.js',
-  '/manifest.json',
+  './',
+  './index.html',
+  './style.css',
+  './app.js',
+  './manifest.json',
   // アイコン
-  '/assets/icons/icon-192.png',
-  '/assets/icons/icon-512.png',
+  './assets/icons/icon-192.png',
+  './assets/icons/icon-512.png',
   // 背景・エフェクト
-  '/assets/background/background.png',
-  '/assets/effects/quest-clear-stamp.png',
-  '/assets/effects/sakura-petal.png',
+  './assets/background/background.png',
+  './assets/effects/quest-clear-stamp.png',
+  './assets/effects/sakura-petal.png',
   // キャラクター
-  '/assets/characters/character-default.png',
-  '/assets/characters/character-alt1.png',
-  '/assets/characters/character-alt2.png',
+  './assets/characters/character-default.png',
+  './assets/characters/character-alt1.png',
+  './assets/characters/character-alt2.png',
   // BGM・SE
-  '/assets/audio/main-bgm.mp3',
-  '/assets/audio/quest-clear.mp3',
-  '/assets/audio/subquest-clear.mp3',
-  '/assets/audio/level-up.mp3',
+  './assets/audio/main-bgm.mp3',
+  './assets/audio/quest-clear.mp3',
+  './assets/audio/subquest-clear.mp3',
+  './assets/audio/level-up.mp3',
   // キャラボイス
-  '/assets/audio/character/voice01.mp3',
-  '/assets/audio/character/voice02.mp3',
-  '/assets/audio/character/voice03.mp3',
-  '/assets/audio/character/voice04.mp3',
-  // Googleフォント（オプション）
-  'https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Kaisei+Decol:wght@400;700&display=swap'
+  './assets/audio/character/voice01.mp3',
+  './assets/audio/character/voice02.mp3',
+  './assets/audio/character/voice03.mp3',
+  './assets/audio/character/voice04.mp3'
 ];
 
 // インストール
