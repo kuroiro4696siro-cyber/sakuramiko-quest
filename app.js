@@ -1,6 +1,6 @@
 /**
  * みこクエスト - メインアプリケーション
- * Quest Management PWA - v1.1
+ * Quest Management PWA - v1.5
  */
 
 'use strict';
@@ -10,13 +10,14 @@
 // =============================================
 const DB = (() => {
   const DB_NAME = 'MikoQuestDB';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;  // v1.5: achievementsストア追加
   let db = null;
 
   const STORES = {
     QUESTS: 'quests',
     PROFILE: 'profile',
-    HISTORY: 'history'
+    HISTORY: 'history',
+    ACHIEVEMENTS: 'achievements'
   };
 
   async function open() {
@@ -33,6 +34,10 @@ const DB = (() => {
         if (!d.objectStoreNames.contains(STORES.HISTORY)) {
           const hs = d.createObjectStore(STORES.HISTORY, { keyPath: 'id', autoIncrement: true });
           hs.createIndex('timestamp', 'timestamp');
+        }
+        // v1.5追加: 実績ストア
+        if (!d.objectStoreNames.contains(STORES.ACHIEVEMENTS)) {
+          d.createObjectStore(STORES.ACHIEVEMENTS, { keyPath: 'id' });
         }
       };
       req.onsuccess = (e) => { db = e.target.result; resolve(db); };
@@ -247,6 +252,162 @@ const ExpSystem = {
 };
 
 // =============================================
+// 難易度システム
+// =============================================
+const Difficulty = {
+  LEVELS: [
+    { id: 'easy',   label: '易',  emoji: '🌱', multiplier: 0.8,  color: '#4caf50' },
+    { id: 'normal', label: '普',  emoji: '⚔️', multiplier: 1.0,  color: '#f48fb1' },
+    { id: 'hard',   label: '難',  emoji: '🔥', multiplier: 1.5,  color: '#ff9800' },
+    { id: 'ultra',  label: '超',  emoji: '💀', multiplier: 2.0,  color: '#e91e63' }
+  ],
+  get(id) {
+    return this.LEVELS.find(d => d.id === id) || this.LEVELS[1];
+  },
+  calcExp(baseExp, difficultyId) {
+    const d = this.get(difficultyId);
+    return Math.round(baseExp * d.multiplier);
+  }
+};
+
+// =============================================
+// 連続達成ボーナス (Streak)
+// =============================================
+const Streak = {
+  KEY: 'mikoquest_streak',
+
+  load() {
+    try {
+      const s = localStorage.getItem(this.KEY);
+      return s ? JSON.parse(s) : { count: 0, lastDate: null };
+    } catch { return { count: 0, lastDate: null }; }
+  },
+
+  save(data) {
+    localStorage.setItem(this.KEY, JSON.stringify(data));
+  },
+
+  // クエストクリア時に呼ぶ。更新後のストリーク情報を返す
+  onQuestCleared() {
+    const today = new Date().toDateString();
+    const streak = this.load();
+
+    if (streak.lastDate === today) {
+      // 同日は変化なし
+      return streak;
+    }
+
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    if (streak.lastDate === yesterday) {
+      streak.count += 1;
+    } else {
+      streak.count = 1;  // リセット
+    }
+    streak.lastDate = today;
+    this.save(streak);
+    return streak;
+  },
+
+  // EXPボーナス倍率を返す（連続2日で+10%、最大+50%）
+  getBonus(streak) {
+    if (!streak || streak.count <= 1) return 0;
+    return Math.min((streak.count - 1) * 0.1, 0.5);
+  },
+
+  // ボーナス適用後のEXPを返す
+  applyBonus(exp, streak) {
+    const bonus = this.getBonus(streak);
+    return { exp: Math.round(exp * (1 + bonus)), bonus, bonusExp: Math.round(exp * bonus) };
+  }
+};
+
+// =============================================
+// 実績システム
+// =============================================
+const Achievements = (() => {
+  // 実績定義
+  const DEFS = [
+    { id: 'first_quest',    title: '初陣',          desc: '初めてクエストをクリアした',        icon: '⚔️',  condition: p => p.clearedQuests >= 1 },
+    { id: 'quest_5',        title: '戦士見習い',     desc: 'クエストを5回クリアした',           icon: '🗡️',  condition: p => p.clearedQuests >= 5 },
+    { id: 'quest_10',       title: '歴戦の勇者',     desc: 'クエストを10回クリアした',          icon: '🏆',  condition: p => p.clearedQuests >= 10 },
+    { id: 'quest_30',       title: '伝説の巫女',     desc: 'クエストを30回クリアした',          icon: '🌸',  condition: p => p.clearedQuests >= 30 },
+    { id: 'quest_50',       title: '神話の英雄',     desc: 'クエストを50回クリアした',          icon: '👑',  condition: p => p.clearedQuests >= 50 },
+    { id: 'level_5',        title: 'Lv.5到達',       desc: 'レベル5に到達した',                 icon: '⭐',  condition: p => p.level >= 5 },
+    { id: 'level_10',       title: 'Lv.10到達',      desc: 'レベル10に到達した',                icon: '🌟',  condition: p => p.level >= 10 },
+    { id: 'level_20',       title: 'Lv.20到達',      desc: 'レベル20に到達した',                icon: '💫',  condition: p => p.level >= 20 },
+    { id: 'level_50',       title: 'Lv.50到達',      desc: 'レベル50に到達した',                icon: '🔮',  condition: p => p.level >= 50 },
+    { id: 'exp_1000',       title: '千の経験',        desc: '総EXP 1,000を獲得した',             icon: '💎',  condition: p => p.totalExp >= 1000 },
+    { id: 'exp_5000',       title: '万の経験',        desc: '総EXP 5,000を獲得した',             icon: '💠',  condition: p => p.totalExp >= 5000 },
+    { id: 'exp_10000',      title: '十万の経験',      desc: '総EXP 10,000を獲得した',            icon: '🌈',  condition: p => p.totalExp >= 10000 },
+    { id: 'streak_3',       title: '三日坊主脱出',    desc: '3日連続でクエストをクリアした',     icon: '🔥',  condition: (p, s) => s.count >= 3 },
+    { id: 'streak_7',       title: '一週間の誓い',    desc: '7日連続でクエストをクリアした',     icon: '🌙',  condition: (p, s) => s.count >= 7 },
+    { id: 'streak_30',      title: '不屈の巫女',      desc: '30日連続でクエストをクリアした',    icon: '⛩️',  condition: (p, s) => s.count >= 30 },
+    { id: 'ultra_clear',    title: '無謀な挑戦者',    desc: '超難易度クエストをクリアした',      icon: '💀',  condition: (p, s, q) => q.difficulty === 'ultra' },
+    { id: 'hard_10',        title: '修羅の道',        desc: '難/超クエストを10回クリアした',     icon: '🗝️',  condition: (p, s, q, stats) => (stats.hardCleared||0) >= 10 },
+    { id: 'subquest_master',title: 'サブクエスト職人', desc: 'サブクエストを50個達成した',       icon: '📜',  condition: (p, s, q, stats) => (stats.subCleared||0) >= 50 },
+    { id: 'no_deadline',    title: '締め切り番長',    desc: '期限切れゼロで10クエストクリア',    icon: '📅',  condition: (p, s, q, stats) => (stats.onTimeCleared||0) >= 10 },
+    { id: 'all_difficulty',  title: '万能の勇者',     desc: '全難易度をそれぞれクリアした',      icon: '🎖️',  condition: (p, s, q, stats) => (stats.diffCleared||[]).length >= 4 },
+  ];
+
+  let unlocked = {};  // { achievementId: unlockedAt }
+  let stats = {};     // 追加統計
+
+  async function load() {
+    const rows = await DB.getAll(DB.STORES.ACHIEVEMENTS);
+    rows.forEach(r => {
+      if (r.id === '__stats__') stats = r.data || {};
+      else unlocked[r.id] = r.unlockedAt;
+    });
+  }
+
+  async function checkAndUnlock(profile, quest) {
+    const streak = Streak.load();
+    const newlyUnlocked = [];
+
+    for (const def of DEFS) {
+      if (unlocked[def.id]) continue;
+      let met = false;
+      try { met = def.condition(profile, streak, quest, stats); } catch {}
+      if (met) {
+        unlocked[def.id] = Date.now();
+        await DB.put(DB.STORES.ACHIEVEMENTS, { id: def.id, unlockedAt: Date.now() });
+        newlyUnlocked.push(def);
+      }
+    }
+    return newlyUnlocked;
+  }
+
+  async function updateStats(key, value) {
+    stats[key] = value;
+    await DB.put(DB.STORES.ACHIEVEMENTS, { id: '__stats__', data: stats });
+  }
+
+  async function incrementStat(key, by = 1) {
+    stats[key] = (stats[key] || 0) + by;
+    await DB.put(DB.STORES.ACHIEVEMENTS, { id: '__stats__', data: stats });
+  }
+
+  async function addToDiffCleared(diffId) {
+    const arr = stats.diffCleared || [];
+    if (!arr.includes(diffId)) arr.push(diffId);
+    stats.diffCleared = arr;
+    await DB.put(DB.STORES.ACHIEVEMENTS, { id: '__stats__', data: stats });
+  }
+
+  function getAll() { return DEFS.map(d => ({ ...d, unlocked: !!unlocked[d.id], unlockedAt: unlocked[d.id] || null })); }
+  function getUnlocked() { return DEFS.filter(d => unlocked[d.id]); }
+  function getStats() { return { ...stats }; }
+
+  async function clearAll() {
+    await DB.clear(DB.STORES.ACHIEVEMENTS);
+    unlocked = {};
+    stats = {};
+  }
+
+  return { load, checkAndUnlock, updateStats, incrementStat, addToDiffCleared, getAll, getUnlocked, getStats, clearAll };
+})();
+
+// =============================================
 // Profile Manager
 // =============================================
 const Profile = (() => {
@@ -299,6 +460,7 @@ const QuestManager = (() => {
       id: `q_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
       title: questData.title,
       deadline: questData.deadline || null,
+      difficulty: questData.difficulty || 'normal',
       status: 'active',
       exp: questData.exp || 50,
       subquests: (questData.subquests || []).map((sq, i) => ({
@@ -441,6 +603,15 @@ const UI = (() => {
     screens[name].classList.add('active');
     currentScreen = name;
     screens[name].scrollTop = 0;
+
+    // 設定画面ではキャラ立ち絵を非表示（スマホでの被り防止）
+    // PCは常に表示（CSS側で制御）
+    const charContainer = document.getElementById('characterContainer');
+    if (name === 'settings') {
+      charContainer.classList.add('char-hidden');
+    } else {
+      charContainer.classList.remove('char-hidden');
+    }
   }
 
   // --- プロフィールUI更新 ---
@@ -604,16 +775,25 @@ const UI = (() => {
     if (!result) return;
 
     Sound.playSubClear();
-    showToast(`+${result.subquest.exp} EXP ✨`);
 
-    const expResult = await Profile.addExp(result.subquest.exp);
+    // サブクエストEXP（難易度倍率適用）
+    const q = QuestManager.getById(questId);
+    const diffId = q.difficulty || 'normal';
+    const finalExp = Difficulty.calcExp(result.subquest.exp, diffId);
+
+    showToast(`+${finalExp} EXP ✨`);
+    const expResult = await Profile.addExp(finalExp);
     updateProfileBar();
 
-    // ローカルquestオブジェクトを更新
-    const q = QuestManager.getById(questId);
+    // 実績統計更新（サブクエスト数）
+    await Achievements.incrementStat('subCleared');
+
+    // 実績チェック
+    const newAch = await Achievements.checkAndUnlock(Profile.get(), q);
+    newAch.forEach(a => { setTimeout(() => showAchievementToast(a), 500); });
 
     // UIを再レンダリング
-    renderDetail(q);
+    renderDetail(QuestManager.getById(questId));
     renderQuestList();
 
     // レベルアップチェック
@@ -630,21 +810,44 @@ const UI = (() => {
     const q = QuestManager.getById(questId);
     if (!q || !QuestManager.isCompletable(q)) return;
 
+    // 難易度EXP計算
+    const diffId = q.difficulty || 'normal';
+    const baseExp = q.exp;
+    const diffExp = Difficulty.calcExp(baseExp, diffId);
+
+    // 連続達成ボーナス
+    const streak = Streak.onQuestCleared();
+    const { exp: finalExp, bonusExp } = Streak.applyBonus(diffExp, streak);
+
     await QuestManager.completeQuest(questId);
     await Profile.incrementCleared();
+
+    // 実績統計更新
+    await Achievements.incrementStat('hardCleared',
+      (diffId === 'hard' || diffId === 'ultra') ? 1 : 0);
+    await Achievements.addToDiffCleared(diffId);
+
+    // 期限内クリアチェック
+    if (!q.deadline || new Date(q.deadline) >= new Date()) {
+      await Achievements.incrementStat('onTimeCleared');
+    }
+
     updateProfileBar();
     renderQuestList();
 
     const updatedQ = QuestManager.getById(questId);
     renderDetail(updatedQ);
 
-    // クリア演出
-    showClearOverlay(q.exp);
+    // クリア演出（ストリークボーナス表示付き）
+    showClearOverlay(finalExp, bonusExp, streak.count);
     Sound.playQuestClear();
 
     // EXP加算
-    const expResult = await Profile.addExp(q.exp);
+    const expResult = await Profile.addExp(finalExp);
     updateProfileBar();
+
+    // 実績チェック
+    const newAch = await Achievements.checkAndUnlock(Profile.get(), q);
 
     // レベルアップ演出
     await sleep(2500);
@@ -656,12 +859,17 @@ const UI = (() => {
         showLevelUpOverlay(newLevel);
       }
     }
+
+    // 実績解放通知
+    newAch.forEach((a, i) => { setTimeout(() => showAchievementToast(a), 400 + i * 1200); });
   }
 
   // --- クリア演出 ---
-  function showClearOverlay(expAmount) {
+  function showClearOverlay(expAmount, bonusExp = 0, streakCount = 0) {
     const overlay = document.getElementById('clearOverlay');
-    document.getElementById('clearExpGain').textContent = `+${expAmount} EXP`;
+    let expText = `+${expAmount} EXP`;
+    if (bonusExp > 0) expText += ` (🔥×${streakCount}日)`;
+    document.getElementById('clearExpGain').textContent = expText;
     document.getElementById('clearStampFallback').style.display = 'none';
     overlay.classList.add('active');
     SakuraEffect.burst(document.getElementById('clearSakuraContainer'), 30);
@@ -692,6 +900,14 @@ const UI = (() => {
     }, 3000);
   }
 
+  // --- 実績解放トースト ---
+  function showAchievementToast(achievement) {
+    const toast = document.getElementById('toast');
+    toast.innerHTML = `🏅 実績解放！<br><strong>${achievement.icon} ${achievement.title}</strong>`;
+    toast.classList.add('show', 'achievement');
+    setTimeout(() => { toast.classList.remove('show', 'achievement'); }, 3500);
+  }
+
   // --- モーダル ---
   function openAddModal() {
     editMode = false;
@@ -702,6 +918,7 @@ const UI = (() => {
     document.getElementById('questDeadlineInput').value = '';
     document.getElementById('questExpInput').value = '50';
     document.getElementById('subQuestPreviewList').innerHTML = '';
+    setDifficultySelector('normal');
     openModal('questModal');
   }
 
@@ -715,8 +932,20 @@ const UI = (() => {
     document.getElementById('questTitleInput').value = q.title;
     document.getElementById('questDeadlineInput').value = q.deadline || '';
     document.getElementById('questExpInput').value = q.exp;
+    setDifficultySelector(q.difficulty || 'normal');
     renderPendingSubquests();
     openModal('questModal');
+  }
+
+  function setDifficultySelector(diffId) {
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.diff === diffId);
+    });
+  }
+
+  function getSelectedDifficulty() {
+    const active = document.querySelector('.diff-btn.active');
+    return active ? active.dataset.diff : 'normal';
   }
 
   function openModal(id) {
@@ -769,6 +998,7 @@ const UI = (() => {
       q.title = title;
       q.deadline = deadline;
       q.exp = exp;
+      q.difficulty = getSelectedDifficulty();
       // サブクエストの更新（既存のクリア済みは維持）
       const existingMap = {};
       q.subquests.forEach(sq => { existingMap[sq.id] = sq; });
@@ -780,7 +1010,7 @@ const UI = (() => {
       showToast('クエストを更新しました ✨');
       renderDetail(q);
     } else {
-      await QuestManager.add({ title, deadline, exp, subquests: pendingSubquests });
+      await QuestManager.add({ title, deadline, exp, difficulty: getSelectedDifficulty(), subquests: pendingSubquests });
       showToast('クエストを追加しました ✨');
     }
 
