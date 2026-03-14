@@ -61,17 +61,26 @@ def create_placeholders():
     write_png('assets/icons/icon-512.png', 512, 512, 233, 30, 99)
     write_png('assets/icons/icon-1024.png', 1024, 1024, 233, 30, 99)
 
-    # キャラクター（透過）
+    # キャラクター（9種・透過）
     write_png('assets/characters/character-default.png', 200, 300, 244, 143, 177, 0)
     write_png('assets/characters/character-alt1.png', 200, 300, 244, 143, 177, 0)
     write_png('assets/characters/character-alt2.png', 200, 300, 244, 143, 177, 0)
+    write_png('assets/characters/character-alt3.png', 200, 300, 244, 143, 177, 0)
+    write_png('assets/characters/character-alt4.png', 200, 300, 244, 143, 177, 0)
+    write_png('assets/characters/character-alt5.png', 200, 300, 244, 143, 177, 0)
+    write_png('assets/characters/character-alt6.png', 200, 300, 244, 143, 177, 0)
+    write_png('assets/characters/character-alt7.png', 200, 300, 244, 143, 177, 0)
+    write_png('assets/characters/character-alt8.png', 200, 300, 244, 143, 177, 0)
 
-    # エフェクト
+    # エフェクト（桜の花びら3種）
     write_png('assets/effects/quest-clear-stamp.png', 200, 200, 233, 30, 99, 0)
-    write_png('assets/effects/sakura-petal.png', 20, 20, 255, 150, 180)
+    write_png('assets/effects/sakura-petal.png',   20, 20, 255, 150, 180)
+    write_png('assets/effects/sakura-petal01.png', 20, 20, 255, 180, 200)
+    write_png('assets/effects/sakura-petal02.png', 20, 20, 240, 120, 160)
 
-    # 背景
-    write_png('assets/background/background.png', 100, 100, 26, 5, 16)
+    # 背景（PC用・スマホ用）
+    write_png('assets/background/background.png',   100, 100, 26, 5, 16)
+    write_png('assets/background/background01.png', 100, 100, 16, 3, 26)
 
     print("✓ プレースホルダー画像生成完了")
 
@@ -82,11 +91,7 @@ def create_placeholder_audio():
         'assets/audio/quest-clear.mp3',
         'assets/audio/subquest-clear.mp3',
         'assets/audio/level-up.mp3',
-        'assets/audio/character/voice01.mp3',
-        'assets/audio/character/voice02.mp3',
-        'assets/audio/character/voice03.mp3',
-        'assets/audio/character/voice04.mp3',
-    ]
+    ] + [f'assets/audio/character/voice{i:02d}.mp3' for i in range(1, 17)]
     for f in audio_files:
         if not os.path.exists(f):
             with open(f, 'wb') as fp:

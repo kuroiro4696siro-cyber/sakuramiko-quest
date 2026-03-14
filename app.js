@@ -113,7 +113,19 @@ const Sound = (() => {
       BASE + 'assets/audio/character/voice01.mp3',
       BASE + 'assets/audio/character/voice02.mp3',
       BASE + 'assets/audio/character/voice03.mp3',
-      BASE + 'assets/audio/character/voice04.mp3'
+      BASE + 'assets/audio/character/voice04.mp3',
+      BASE + 'assets/audio/character/voice05.mp3',
+      BASE + 'assets/audio/character/voice06.mp3',
+      BASE + 'assets/audio/character/voice07.mp3',
+      BASE + 'assets/audio/character/voice08.mp3',
+      BASE + 'assets/audio/character/voice09.mp3',
+      BASE + 'assets/audio/character/voice10.mp3',
+      BASE + 'assets/audio/character/voice11.mp3',
+      BASE + 'assets/audio/character/voice12.mp3',
+      BASE + 'assets/audio/character/voice13.mp3',
+      BASE + 'assets/audio/character/voice14.mp3',
+      BASE + 'assets/audio/character/voice15.mp3',
+      BASE + 'assets/audio/character/voice16.mp3'
     ]
   };
 
@@ -363,19 +375,34 @@ const QuestManager = (() => {
 // Sakura Effect
 // =============================================
 const SakuraEffect = {
+  // 花びら画像3種（sakura-petal.png / sakura-petal01.png / sakura-petal02.png）
+  PETAL_IMAGES: [
+    'assets/effects/sakura-petal.png',
+    'assets/effects/sakura-petal01.png',
+    'assets/effects/sakura-petal02.png'
+  ],
+
   createPetal(container) {
     const petal = document.createElement('div');
     petal.className = 'sakura-petal';
-    const size = 6 + Math.random() * 10;
+    const size = 10 + Math.random() * 18;
+    // 3種の画像からランダムに選択
+    const imgSrc = this.PETAL_IMAGES[Math.floor(Math.random() * this.PETAL_IMAGES.length)];
+    const rotate = Math.random() * 360;
     petal.style.cssText = `
       width:${size}px; height:${size}px;
-      left:${Math.random() * 100}%;
-      animation-duration:${4 + Math.random() * 6}s;
-      animation-delay:${Math.random() * 3}s;
-      opacity:${0.4 + Math.random() * 0.5};
+      left:${Math.random() * 105}%;
+      animation-duration:${5 + Math.random() * 7}s;
+      animation-delay:${Math.random() * 2}s;
+      opacity:${0.5 + Math.random() * 0.5};
+      background-image: url('${imgSrc}');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-color: transparent;
+      transform: rotate(${rotate}deg);
     `;
     container.appendChild(petal);
-    setTimeout(() => petal.remove(), 10000);
+    setTimeout(() => petal.remove(), 12000);
   },
 
   startAmbient() {
@@ -833,7 +860,13 @@ const UI = (() => {
   const CHARS = [
     { id: 'default', src: 'assets/characters/character-default.png', label: '🌸' },
     { id: 'alt1',    src: 'assets/characters/character-alt1.png',    label: '⛩️' },
-    { id: 'alt2',    src: 'assets/characters/character-alt2.png',    label: '✨' }
+    { id: 'alt2',    src: 'assets/characters/character-alt2.png',    label: '✨' },
+    { id: 'alt3',    src: 'assets/characters/character-alt3.png',    label: '🎀' },
+    { id: 'alt4',    src: 'assets/characters/character-alt4.png',    label: '🌙' },
+    { id: 'alt5',    src: 'assets/characters/character-alt5.png',    label: '🎵' },
+    { id: 'alt6',    src: 'assets/characters/character-alt6.png',    label: '🌺' },
+    { id: 'alt7',    src: 'assets/characters/character-alt7.png',    label: '💫' },
+    { id: 'alt8',    src: 'assets/characters/character-alt8.png',    label: '🎐' }
   ];
 
   function getCurrentChar() {
@@ -970,6 +1003,40 @@ function bindEvents() {
 }
 
 // =============================================
+// Background Image Switcher
+// PC: assets/background/background.png
+// スマホ（幅768px以下）: assets/background/background01.png
+// =============================================
+function applyBackgroundImage() {
+  const isMobile = window.matchMedia('(max-width: 768px)').matches
+                || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const src = isMobile
+    ? 'assets/background/background01.png'
+    : 'assets/background/background.png';
+
+  const bgEl = document.querySelector('.bg-image');
+  if (!bgEl) return;
+
+  // 現在の設定と同じなら何もしない
+  if (bgEl.dataset.bgSrc === src) return;
+  bgEl.dataset.bgSrc = src;
+
+  // 画像を先読みしてから適用（ちらつき防止）
+  const img = new Image();
+  img.onload = () => {
+    bgEl.style.backgroundImage = `url('${src}')`;
+    bgEl.style.backgroundSize = 'cover';
+    bgEl.style.backgroundPosition = 'center';
+    bgEl.style.backgroundRepeat = 'no-repeat';
+  };
+  img.onerror = () => {
+    // 画像がなければCSS グラデーションにフォールバック（既存のスタイルが維持される）
+    bgEl.dataset.bgSrc = '';
+  };
+  img.src = src;
+}
+
+// =============================================
 // App Initialization
 // =============================================
 async function initApp() {
@@ -990,15 +1057,28 @@ async function initApp() {
 
     // キャラクター初期設定（相対パス）
     const charId = UI.getCurrentChar();
-    const charSrc = {
+    // CHARS配列から動的に解決（9種対応）
+    const CHAR_MAP = {
       'default': 'assets/characters/character-default.png',
       'alt1':    'assets/characters/character-alt1.png',
-      'alt2':    'assets/characters/character-alt2.png'
-    }[charId] || 'assets/characters/character-default.png';
+      'alt2':    'assets/characters/character-alt2.png',
+      'alt3':    'assets/characters/character-alt3.png',
+      'alt4':    'assets/characters/character-alt4.png',
+      'alt5':    'assets/characters/character-alt5.png',
+      'alt6':    'assets/characters/character-alt6.png',
+      'alt7':    'assets/characters/character-alt7.png',
+      'alt8':    'assets/characters/character-alt8.png'
+    };
+    const charSrc = CHAR_MAP[charId] || CHAR_MAP['default'];
     document.getElementById('characterImg').src = charSrc;
 
     // 桜エフェクト開始
     SakuraEffect.startAmbient();
+
+    // 背景画像をPC/スマホで切り替え
+    // スマホ: background01.png / PC: background.png
+    applyBackgroundImage();
+    window.addEventListener('resize', applyBackgroundImage);
 
     // イベントバインド
     bindEvents();
