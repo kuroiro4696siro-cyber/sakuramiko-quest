@@ -1135,24 +1135,74 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
   text-shadow: var(--txt-shadow-soft);
 }
 
-/* ===== キャラ非表示クラス（設定画面時・スマホのみ） ===== */
-/* スマホ: 設定画面で非表示 */
-@media (max-width: 767px) {
-  .char-hidden {
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(20px);
-    transition: opacity 0.25s ease, transform 0.25s ease;
-  }
+/* ===== 期限設定モード切替 ===== */
+.deadline-mode-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
 }
-/* PC: 設定画面でも常に表示 */
-@media (min-width: 768px) {
-  .char-hidden {
-    /* PCでは非表示にしない */
-    opacity: 1;
-    pointer-events: auto;
-    transform: none;
-  }
+.dl-mode-btn {
+  flex: 1;
+  padding: 7px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: var(--font-main);
+  color: rgba(220,180,200,0.75);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,140,170,0.20);
+  transition: var(--transition);
+  cursor: pointer;
+}
+.dl-mode-btn:hover { background: rgba(255,140,170,0.12); color: #ffd0e8; }
+.dl-mode-btn.active {
+  background: linear-gradient(135deg, rgba(200,40,90,0.35), rgba(233,30,99,0.20));
+  color: #ffd0e8;
+  border-color: rgba(233,30,99,0.45);
+  text-shadow: var(--txt-shadow-soft);
+}
+.deadline-range-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.deadline-range-row:last-child { margin-bottom: 0; }
+.dl-range-label {
+  font-size: 0.72rem;
+  color: rgba(200,160,180,0.80);
+  min-width: 28px;
+  flex-shrink: 0;
+  text-align: right;
+}
+.deadline-single input,
+.deadline-range-row input {
+  width: 100%;
+  padding: 9px 10px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,140,170,0.22);
+  border-radius: var(--radius-sm);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-family: var(--font-main);
+  outline: none;
+  transition: var(--transition);
+  -webkit-appearance: none;
+}
+.deadline-single input:focus,
+.deadline-range-row input:focus {
+  border-color: var(--pink-main);
+  background: rgba(255,255,255,0.10);
+}
+input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(0.75); cursor: pointer; }
+.quest-deadline.not-started { color: #80c8ff; }
+
+/* ===== キャラ非表示クラス（設定画面時・全サイズ共通） ===== */
+/* スマホ・PC共通: 設定画面では非表示 */
+.char-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
 }
 
 /* ===== レスポンシブ: タブレット以上 (768px〜) ===== */
@@ -1207,8 +1257,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
   /* FAB */
   .fab-btn { right: calc(50% - 384px + 24px); width: 60px; height: 60px; font-size: 1.8rem; }
 
-  /* キャラクター: タブレットで中サイズ */
-  .character-container { width: 180px; left: calc(50% - 384px); }
+  /* キャラクター: タブレットで中サイズ、位置をclampで安全に */
+  .character-container {
+    width: 180px;
+    /* コンテンツ左端 - 立ち絵幅、ただし画面端は4px確保 */
+    left: clamp(4px, calc(50% - 384px - 180px + 40px), calc(50% - 384px));
+  }
   .character-img        { width: 180px; max-height: 280px; }
   .char-emoji           { font-size: 7rem; }
   .char-fallback        { width: 150px; height: 200px; }
@@ -1266,8 +1320,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
   /* FAB */
   .fab-btn { right: calc(50% - 450px + 32px); width: 64px; height: 64px; font-size: 1.9rem; }
 
-  /* キャラクター: PCで大きく */
-  .character-container { width: 240px; left: calc(50% - 450px); }
+  /* キャラクター: PCで大きく、コンテンツの外に配置 */
+  .character-container {
+    width: 240px;
+    left: clamp(4px, calc(50% - 450px - 200px + 60px), calc(50% - 450px));
+  }
   .character-img        { width: 240px; max-height: 380px; }
   .char-emoji           { font-size: 9rem; }
   .char-fallback        { width: 200px; height: 280px; }
@@ -1277,7 +1334,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
 @media (min-width: 1280px) {
   .app-header, .profile-bar, .main-content { max-width: 960px; }
 
-  .character-container { width: 270px; left: calc(50% - 480px); }
+  .character-container {
+    width: 270px;
+    left: clamp(4px, calc(50% - 480px - 220px + 60px), calc(50% - 480px));
+  }
   .character-img        { width: 270px; max-height: 430px; }
 
   .fab-btn { right: calc(50% - 480px + 32px); }

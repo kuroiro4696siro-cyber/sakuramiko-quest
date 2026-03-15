@@ -193,8 +193,26 @@
         <input type="text" id="questTitleInput" placeholder="クエストのタイトルを入力..." maxlength="50">
       </div>
       <div class="form-group">
-        <label>期限</label>
-        <input type="date" id="questDeadlineInput">
+        <label>期限設定</label>
+        <div class="deadline-mode-toggle">
+          <button class="dl-mode-btn active" data-mode="single" id="dlModeSingle">📅 締切日時</button>
+          <button class="dl-mode-btn" data-mode="range" id="dlModeRange">📆 期間指定</button>
+        </div>
+        <!-- 締切日時モード -->
+        <div class="deadline-single" id="deadlineSingleArea">
+          <input type="datetime-local" id="questDeadlineInput">
+        </div>
+        <!-- 期間指定モード -->
+        <div class="deadline-range" id="deadlineRangeArea" style="display:none">
+          <div class="deadline-range-row">
+            <span class="dl-range-label">開始</span>
+            <input type="datetime-local" id="questStartInput">
+          </div>
+          <div class="deadline-range-row">
+            <span class="dl-range-label">終了</span>
+            <input type="datetime-local" id="questEndInput">
+          </div>
+        </div>
       </div>
       <div class="form-group">
         <label>獲得EXP（親クエスト）</label>

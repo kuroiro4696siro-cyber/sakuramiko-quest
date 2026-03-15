@@ -787,14 +787,17 @@ const UI = (() => {
 
     let filtered;
     if (currentTab === 'today') {
-      // 本日: 期限が今日 or 期限なし、かつアクティブ
+      // 本日: 期限が今日以前 / 期間中（開始済み） / 期限なし、かつアクティブ
       filtered = allQuests.filter(q => {
         if (q.status === 'cleared') return false;
+        if (q.deadlineMode === 'range') {
+          const start = q.startDate ? new Date(q.startDate) : null;
+          if (start && start >= tomorrow) return false; // 明日以降開始は除外
+          return true;
+        }
         if (!q.deadline) return true;
-        const dl = new Date(q.deadline);
-        return dl < tomorrow; // 今日以前（期限切れ含む）
+        return new Date(q.deadline) < tomorrow;
       }).sort((a, b) => {
-        // 期限あり優先、次に作成日降順
         if (a.deadline && !b.deadline) return -1;
         if (!a.deadline && b.deadline) return 1;
         return b.createdAt - a.createdAt;
@@ -830,6 +833,25 @@ const UI = (() => {
     });
   }
 
+  // 期限表示文字列を生成するヘルパー
+  function formatDeadline(q, compact = false) {
+    const fmt = (iso, withTime = true) => {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const m = d.getMonth()+1, day = d.getDate();
+      const h = d.getHours(), min = String(d.getMinutes()).padStart(2,'0');
+      const hasTime = h !== 0 || min !== '00';
+      if (compact) return hasTime ? `${m}/${day} ${h}:${min}` : `${m}/${day}`;
+      return hasTime ? `${d.getFullYear()}/${m}/${day} ${h}:${min}` : `${d.getFullYear()}/${m}/${day}`;
+    };
+    if (q.deadlineMode === 'range' && q.startDate && q.endDate) {
+      return compact
+        ? `${fmt(q.startDate)}〜${fmt(q.endDate)}`
+        : `${fmt(q.startDate)} 〜 ${fmt(q.endDate)}`;
+    }
+    return fmt(q.deadline, true);
+  }
+
   function createQuestCard(q) {
     const card = document.createElement('div');
     const isCleared = q.status === 'cleared';
@@ -837,14 +859,16 @@ const UI = (() => {
     card.dataset.id = q.id;
 
     const progress = QuestManager.getSubquestProgress(q);
-    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const effectiveDeadline = q.deadlineMode === 'range' ? q.endDate : q.deadline;
 
     let deadlineHtml = '';
-    if (q.deadline) {
-      const dl = new Date(q.deadline);
-      const isOverdue = dl < today && !isCleared;
-      const dlStr = `${dl.getMonth()+1}/${dl.getDate()}`;
-      deadlineHtml = `<span class="quest-deadline ${isOverdue ? 'overdue' : ''}">📅 ${dlStr}</span>`;
+    if (effectiveDeadline || (q.deadlineMode === 'range' && q.startDate)) {
+      const isOverdue = effectiveDeadline && new Date(effectiveDeadline) < now && !isCleared;
+      const isNotStarted = q.deadlineMode === 'range' && q.startDate && new Date(q.startDate) > now;
+      const dlStr = formatDeadline(q, true);
+      const icon = q.deadlineMode === 'range' ? '📆' : '📅';
+      deadlineHtml = `<span class="quest-deadline ${isOverdue ? 'overdue' : ''} ${isNotStarted ? 'not-started' : ''}">${icon} ${dlStr}</span>`;
     }
 
     const progressStr = progress ? `📋 ${progress.done}/${progress.total}` : '';
@@ -904,9 +928,10 @@ const UI = (() => {
     const canComplete = QuestManager.isCompletable(q);
 
     let deadlineHtml = '';
-    if (q.deadline) {
-      const dl = new Date(q.deadline);
-      deadlineHtml = `<span class="detail-badge">📅 ${dl.getFullYear()}/${dl.getMonth()+1}/${dl.getDate()}</span>`;
+    if (q.deadlineMode === 'range' ? (q.startDate || q.endDate) : q.deadline) {
+      const dlStr = formatDeadline(q, false);
+      const icon  = q.deadlineMode === 'range' ? '📆' : '📅';
+      deadlineHtml = `<span class="detail-badge">${icon} ${dlStr}</span>`;
     }
 
     let subquestHtml = '';
@@ -1131,6 +1156,35 @@ const UI = (() => {
     setTimeout(() => { toast.classList.remove('show', 'achievement'); }, 3500);
   }
 
+  // --- 期限モード切替 ---
+  function initDeadlineMode() {
+    document.querySelectorAll('.dl-mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.dl-mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const mode = btn.dataset.mode;
+        document.getElementById('deadlineSingleArea').style.display = mode === 'single' ? '' : 'none';
+        document.getElementById('deadlineRangeArea').style.display  = mode === 'range'  ? '' : 'none';
+      });
+    });
+  }
+
+  function setDeadlineMode(mode) {
+    document.querySelectorAll('.dl-mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    document.getElementById('deadlineSingleArea').style.display = mode === 'single' ? '' : 'none';
+    document.getElementById('deadlineRangeArea').style.display  = mode === 'range'  ? '' : 'none';
+  }
+
+  // datetime-local 用に ISO → "YYYY-MM-DDTHH:MM" に変換
+  function toDatetimeLocal(isoStr) {
+    if (!isoStr) return '';
+    try {
+      const d = new Date(isoStr);
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch { return ''; }
+  }
+
   // --- モーダル ---
   function openAddModal() {
     editMode = false;
@@ -1139,9 +1193,12 @@ const UI = (() => {
     document.getElementById('modalTitle').textContent = '📜 新しいクエスト';
     document.getElementById('questTitleInput').value = '';
     document.getElementById('questDeadlineInput').value = '';
+    document.getElementById('questStartInput').value = '';
+    document.getElementById('questEndInput').value = '';
     document.getElementById('questExpInput').value = '50';
     document.getElementById('subQuestPreviewList').innerHTML = '';
     setDifficultySelector('normal');
+    setDeadlineMode('single');
     openModal('questModal');
   }
 
@@ -1153,9 +1210,22 @@ const UI = (() => {
     pendingSubquests = q.subquests.map(sq => ({ ...sq }));
     document.getElementById('modalTitle').textContent = '✏️ クエスト編集';
     document.getElementById('questTitleInput').value = q.title;
-    document.getElementById('questDeadlineInput').value = q.deadline || '';
     document.getElementById('questExpInput').value = q.exp;
     setDifficultySelector(q.difficulty || 'normal');
+
+    // 期限モードの復元
+    if (q.deadlineMode === 'range') {
+      setDeadlineMode('range');
+      document.getElementById('questStartInput').value = toDatetimeLocal(q.startDate);
+      document.getElementById('questEndInput').value   = toDatetimeLocal(q.endDate);
+      document.getElementById('questDeadlineInput').value = '';
+    } else {
+      setDeadlineMode('single');
+      document.getElementById('questDeadlineInput').value = toDatetimeLocal(q.deadline);
+      document.getElementById('questStartInput').value = '';
+      document.getElementById('questEndInput').value   = '';
+    }
+
     renderPendingSubquests();
     openModal('questModal');
   }
@@ -1213,27 +1283,43 @@ const UI = (() => {
   async function saveQuest() {
     const title = document.getElementById('questTitleInput').value.trim();
     if (!title) { showToast('クエスト名を入力してください'); return; }
-    const deadline = document.getElementById('questDeadlineInput').value || null;
     const exp = parseInt(document.getElementById('questExpInput').value) || 50;
+
+    // 期限データの収集
+    const mode = document.querySelector('.dl-mode-btn.active')?.dataset.mode || 'single';
+    let deadline = null, startDate = null, endDate = null;
+    if (mode === 'single') {
+      const v = document.getElementById('questDeadlineInput').value;
+      deadline = v ? new Date(v).toISOString() : null;
+    } else {
+      const sv = document.getElementById('questStartInput').value;
+      const ev = document.getElementById('questEndInput').value;
+      startDate = sv ? new Date(sv).toISOString() : null;
+      endDate   = ev ? new Date(ev).toISOString() : null;
+      // 終了日時を "締切" として期限判定にも使う
+      deadline = endDate;
+      if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+        showToast('開始日時が終了日時より後になっています'); return;
+      }
+    }
+
+    const questData = { title, deadline, startDate, endDate, deadlineMode: mode,
+                        exp, difficulty: getSelectedDifficulty(), subquests: pendingSubquests };
 
     if (editMode && currentQuestId) {
       const q = QuestManager.getById(currentQuestId);
-      q.title = title;
-      q.deadline = deadline;
-      q.exp = exp;
-      q.difficulty = getSelectedDifficulty();
-      // サブクエストの更新（既存のクリア済みは維持）
+      Object.assign(q, { title, deadline, startDate, endDate, deadlineMode: mode,
+                          exp, difficulty: questData.difficulty });
       const existingMap = {};
       q.subquests.forEach(sq => { existingMap[sq.id] = sq; });
       q.subquests = pendingSubquests.map(sq => ({
-        ...sq,
-        status: existingMap[sq.id] ? existingMap[sq.id].status : (sq.status || 'active')
+        ...sq, status: existingMap[sq.id] ? existingMap[sq.id].status : (sq.status || 'active')
       }));
       await QuestManager.update(q);
       showToast('クエストを更新しました ✨');
       renderDetail(q);
     } else {
-      await QuestManager.add({ title, deadline, exp, difficulty: getSelectedDifficulty(), subquests: pendingSubquests });
+      await QuestManager.add(questData);
       showToast('クエストを追加しました ✨');
     }
 
@@ -1405,7 +1491,7 @@ const UI = (() => {
     openAddModal, openEditModal, closeModal, saveQuest, addPendingSubquest,
     initSettings, bindSettingsEvents, setCurrentChar, getCurrentChar,
     showToast, showConfirm, handleSubquestComplete, handleQuestComplete,
-    initTabs
+    initTabs, initDeadlineMode
   };
 })();
 
@@ -1449,6 +1535,7 @@ function bindEvents() {
   document.getElementById('subQuestTitleInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') UI.addPendingSubquest();
   });
+  UI.initDeadlineMode();
 
   // 確認ダイアログ
   document.getElementById('confirmCancelBtn').addEventListener('click', () => UI.closeModal('confirmModal'));
