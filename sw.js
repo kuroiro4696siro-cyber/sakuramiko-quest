@@ -3,7 +3,7 @@
  * PWAオフラインキャッシュ
  */
 
-const CACHE_NAME = 'mikoquest-v1.4';
+const CACHE_NAME = 'mikoquest-v1.6';
 
 // sw.jsと同じディレクトリを起点とした相対パスでキャッシュ
 // これにより /sakuramiko-quest/ などサブディレクトリ配置でも動作する

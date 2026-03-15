@@ -40,8 +40,9 @@
     <span class="level-num" id="profileLevel">1</span>
   </div>
   <div class="exp-area">
-    <div class="exp-text">
-      <span id="profileExpCurrent">0</span> / <span id="profileExpNext">100</span> EXP
+    <div class="exp-text-row">
+      <span id="profileTitle" class="profile-title-text">🌱 新人35P</span>
+      <span class="exp-num-text"><span id="profileExpCurrent">0</span> / <span id="profileExpNext">100</span> EXP</span>
     </div>
     <div class="exp-bar-wrap">
       <div class="exp-bar-fill" id="profileExpBar" style="width:0%"></div>
@@ -135,6 +136,13 @@
       <div class="settings-section">
         <div class="settings-title">📊 プロフィール</div>
         <div class="profile-stats">
+          <div class="stat-row title-highlight-row">
+            <span>現在の称号</span>
+            <span id="statTitle" class="stat-title-value">🌱 新人35P</span>
+          </div>
+          <div class="stat-row">
+            <span>段階</span><span id="statStage">新人35P</span>
+          </div>
           <div class="stat-row">
             <span>現在レベル</span><span id="statLevel">1</span>
           </div>
@@ -144,6 +152,13 @@
           <div class="stat-row">
             <span>クリア済みクエスト</span><span id="statClearedQuests">0</span>
           </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">📜 称号一覧</div>
+        <div id="titleListContainer" class="title-list-container">
+          <!-- JSで動的に挿入 -->
         </div>
       </div>
 
@@ -229,6 +244,8 @@
       <div class="levelup-label">LEVEL UP!</div>
       <div class="levelup-num" id="levelupNum">2</div>
     </div>
+    <div class="levelup-title" id="levelupTitle">🌱 見習い35P</div>
+    <div class="levelup-stage" id="levelupStage">新人35P</div>
     <div class="levelup-exp-info" id="levelupExpInfo">EXP: 100 / 150</div>
   </div>
   <div class="levelup-particles" id="levelupParticles"></div>

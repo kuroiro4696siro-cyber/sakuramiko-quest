@@ -251,6 +251,127 @@ const ExpSystem = {
   }
 };
 
+
+// =============================================
+// 称号システム (TitleSystem)
+// =============================================
+const TitleSystem = (() => {
+  const TITLES = {
+    1:  { name: '新人35P',       stage: '新人35P',   stageIcon: '🌱' },
+    2:  { name: '見習い35P',      stage: '新人35P',   stageIcon: '🌱' },
+    3:  { name: '応援係35P',      stage: '新人35P',   stageIcon: '🌱' },
+    4:  { name: '境内掃除係',      stage: '新人35P',   stageIcon: '🌱' },
+    5:  { name: '参拝常連',        stage: '新人35P',   stageIcon: '🌱' },
+    6:  { name: 'みこ応援団',      stage: '新人35P',   stageIcon: '🌱' },
+    7:  { name: '神社お手伝い',     stage: '新人35P',   stageIcon: '🌱' },
+    8:  { name: '桜の信徒',        stage: '新人35P',   stageIcon: '🌱' },
+    9:  { name: '境内常駐',        stage: '新人35P',   stageIcon: '🌱' },
+    10: { name: '公認新人35P',     stage: '新人35P',   stageIcon: '🌸' },
+    11: { name: '正式35P',         stage: '正式35P',   stageIcon: '🌸' },
+    12: { name: '境内守護35P',     stage: '正式35P',   stageIcon: '🌸' },
+    13: { name: '桜の35P',         stage: '正式35P',   stageIcon: '🌸' },
+    14: { name: 'みこ応援隊',       stage: '正式35P',   stageIcon: '🌸' },
+    15: { name: '祭り担当35P',     stage: '正式35P',   stageIcon: '🌸' },
+    16: { name: '境内警備35P',     stage: '正式35P',   stageIcon: '🌸' },
+    17: { name: '神社広報35P',     stage: '正式35P',   stageIcon: '🌸' },
+    18: { name: '神社代表35P',     stage: '正式35P',   stageIcon: '🌸' },
+    19: { name: '桜神社の35P',     stage: '正式35P',   stageIcon: '🌸' },
+    20: { name: '上級35P',         stage: '正式35P',   stageIcon: '🌸' },
+    21: { name: '式神覚醒',         stage: '下級式神',  stageIcon: '⛩️' },
+    22: { name: '下級式神',         stage: '下級式神',  stageIcon: '⛩️' },
+    23: { name: '桜式神',           stage: '下級式神',  stageIcon: '⛩️' },
+    24: { name: '境内式神',         stage: '下級式神',  stageIcon: '⛩️' },
+    25: { name: '神社守護式神',      stage: '下級式神',  stageIcon: '⛩️' },
+    26: { name: '祈祷式神',         stage: '下級式神',  stageIcon: '⛩️' },
+    27: { name: '桜神の式神',       stage: '下級式神',  stageIcon: '⛩️' },
+    28: { name: '境内の守り手',      stage: '下級式神',  stageIcon: '⛩️' },
+    29: { name: '桜の式神',         stage: '下級式神',  stageIcon: '⛩️' },
+    30: { name: '熟練式神',         stage: '下級式神',  stageIcon: '⛩️' },
+    31: { name: '神域式神',         stage: '下級式神',  stageIcon: '⛩️' },
+    32: { name: '祭礼式神',         stage: '下級式神',  stageIcon: '⛩️' },
+    33: { name: '神社の守り',        stage: '下級式神',  stageIcon: '⛩️' },
+    34: { name: '境内守護式神',      stage: '下級式神',  stageIcon: '⛩️' },
+    35: { name: '桜神社式神',       stage: '下級式神',  stageIcon: '⛩️' },
+    36: { name: '祈祷守護',         stage: '下級式神',  stageIcon: '⛩️' },
+    37: { name: '神域守護',         stage: '下級式神',  stageIcon: '⛩️' },
+    38: { name: '桜神の従者',       stage: '下級式神',  stageIcon: '⛩️' },
+    39: { name: '式神長',           stage: '下級式神',  stageIcon: '⛩️' },
+    40: { name: '大式神',           stage: '下級式神',  stageIcon: '⛩️' },
+    41: { name: '上級式神',         stage: '上級式神',  stageIcon: '🔮' },
+    42: { name: '神社守護者',        stage: '上級式神',  stageIcon: '🔮' },
+    43: { name: '桜神守護',         stage: '上級式神',  stageIcon: '🔮' },
+    44: { name: '神域守護',         stage: '上級式神',  stageIcon: '🔮' },
+    45: { name: '桜の守護式神',      stage: '上級式神',  stageIcon: '🔮' },
+    46: { name: '神社防衛式神',      stage: '上級式神',  stageIcon: '🔮' },
+    47: { name: '神域守護者',        stage: '上級式神',  stageIcon: '🔮' },
+    48: { name: '神社の守り神',      stage: '上級式神',  stageIcon: '🔮' },
+    49: { name: '神社護衛長',        stage: '上級式神',  stageIcon: '🔮' },
+    50: { name: '神社守護神',        stage: '上級式神',  stageIcon: '🔮' },
+    51: { name: '神域番人',         stage: '上級式神',  stageIcon: '🔮' },
+    52: { name: '桜神の護衛',       stage: '上級式神',  stageIcon: '🔮' },
+    53: { name: '神域監視者',        stage: '上級式神',  stageIcon: '🔮' },
+    54: { name: '神社大守護',        stage: '上級式神',  stageIcon: '🔮' },
+    55: { name: '桜神守護者',        stage: '上級式神',  stageIcon: '🔮' },
+    56: { name: '神域の剣',         stage: '上級式神',  stageIcon: '🔮' },
+    57: { name: '桜の守護神',       stage: '上級式神',  stageIcon: '🔮' },
+    58: { name: '神社大守護神',      stage: '上級式神',  stageIcon: '🔮' },
+    59: { name: '神域統括',         stage: '上級式神',  stageIcon: '🔮' },
+    60: { name: '大神域守護',        stage: '上級式神',  stageIcon: '🔮' },
+    61: { name: '神域将',           stage: '上級式神',  stageIcon: '🔮' },
+    62: { name: '桜神の大式神',      stage: '上級式神',  stageIcon: '🔮' },
+    63: { name: '神社の守護将',      stage: '上級式神',  stageIcon: '🔮' },
+    64: { name: '神域統治者',        stage: '上級式神',  stageIcon: '🔮' },
+    65: { name: '桜神の使者',       stage: '上級式神',  stageIcon: '🔮' },
+    66: { name: '神域司令',         stage: '上級式神',  stageIcon: '🔮' },
+    67: { name: '神社の守護長',      stage: '上級式神',  stageIcon: '🔮' },
+    68: { name: '神域の王',         stage: '上級式神',  stageIcon: '🔮' },
+    69: { name: '桜神の右腕',       stage: '上級式神',  stageIcon: '🔮' },
+    70: { name: '桜神の守護将',      stage: '上級式神',  stageIcon: '🔮' },
+    71: { name: '神格式神',         stage: '神格式神',  stageIcon: '👑' },
+    72: { name: '神域支配者',        stage: '神格式神',  stageIcon: '👑' },
+    73: { name: '桜神の代行者',      stage: '神格式神',  stageIcon: '👑' },
+    74: { name: '神域統治神',        stage: '神格式神',  stageIcon: '👑' },
+    75: { name: '桜神の神使',       stage: '神格式神',  stageIcon: '👑' },
+    76: { name: '神域神官',         stage: '神格式神',  stageIcon: '👑' },
+    77: { name: '桜神守護神',        stage: '神格式神',  stageIcon: '👑' },
+    78: { name: '神域の王',         stage: '神格式神',  stageIcon: '👑' },
+    79: { name: '神域の主',         stage: '神格式神',  stageIcon: '👑' },
+    80: { name: '神社の神',         stage: '神格式神',  stageIcon: '👑' },
+    81: { name: '桜神の化身',       stage: '神格式神',  stageIcon: '👑' },
+    82: { name: '神域神',           stage: '神格式神',  stageIcon: '👑' },
+    83: { name: '桜神代理',         stage: '神格式神',  stageIcon: '👑' },
+    84: { name: '神域守護神',        stage: '神格式神',  stageIcon: '👑' },
+    85: { name: '桜神の使徒',       stage: '神格式神',  stageIcon: '👑' },
+    86: { name: '神域の神主',       stage: '神格式神',  stageIcon: '👑' },
+    87: { name: '桜神の神格',       stage: '神格式神',  stageIcon: '👑' },
+    88: { name: '神域支配神',        stage: '神格式神',  stageIcon: '👑' },
+    89: { name: '桜神の守護神',      stage: '神格式神',  stageIcon: '👑' },
+    90: { name: '神域の主神',       stage: '神格式神',  stageIcon: '👑' },
+    91: { name: '桜神の眷属神',      stage: '神格式神',  stageIcon: '👑' },
+    92: { name: '神域の大神',       stage: '神格式神',  stageIcon: '👑' },
+    93: { name: '桜神の大神官',      stage: '神格式神',  stageIcon: '👑' },
+    94: { name: '神域の大神',       stage: '神格式神',  stageIcon: '👑' },
+    95: { name: '桜神の代理神',      stage: '神格式神',  stageIcon: '👑' },
+    96: { name: '神域創造神',        stage: '神格式神',  stageIcon: '👑' },
+    97: { name: '桜神の加護神',      stage: '神格式神',  stageIcon: '👑' },
+    98: { name: '神域の絶対神',      stage: '神格式神',  stageIcon: '👑' },
+    99: { name: '桜神の最上式神',    stage: '神格式神',  stageIcon: '👑' },
+    100:{ name: '桜神',             stage: '神格式神',  stageIcon: '🌸👑' },
+  };
+  // 段階が変わる境界Lv
+  const STAGE_BORDERS = [11, 21, 41, 71];
+
+  function getTitle(level) {
+    const lv = Math.min(Math.max(Math.floor(level), 1), 100);
+    return TITLES[lv] || TITLES[1];
+  }
+  function isStageBorder(level) { return STAGE_BORDERS.includes(level); }
+  function getAllForDisplay() {
+    return Object.entries(TITLES).map(([lv, t]) => ({ level: parseInt(lv), ...t }));
+  }
+  return { getTitle, isStageBorder, getAllForDisplay };
+})();
+
 // =============================================
 // 難易度システム
 // =============================================
@@ -623,10 +744,20 @@ const UI = (() => {
     document.getElementById('profileExpNext').textContent = nextExp;
     const pct = Math.min((p.exp / nextExp) * 100, 100);
     document.getElementById('profileExpBar').style.width = `${pct}%`;
+
+    // 称号をプロフィールバーに表示
+    const titleInfo = TitleSystem.getTitle(p.level);
+    const titleBarEl = document.getElementById('profileTitle');
+    if (titleBarEl) titleBarEl.textContent = `${titleInfo.stageIcon} ${titleInfo.name}`;
+
     // 設定画面の統計
     document.getElementById('statLevel').textContent = p.level;
     document.getElementById('statTotalExp').textContent = p.totalExp;
     document.getElementById('statClearedQuests').textContent = p.clearedQuests || 0;
+    const statTitleEl = document.getElementById('statTitle');
+    if (statTitleEl) statTitleEl.textContent = `${titleInfo.stageIcon} ${titleInfo.name}`;
+    const statStageEl = document.getElementById('statStage');
+    if (statStageEl) statStageEl.textContent = titleInfo.stage;
   }
 
   // --- タブ管理 ---
@@ -954,21 +1085,42 @@ const UI = (() => {
   function showLevelUpOverlay(newLevel) {
     Sound.playLevelUp();
     const overlay = document.getElementById('levelupOverlay');
+    const titleInfo = TitleSystem.getTitle(newLevel);
+    const isBorder = TitleSystem.isStageBorder(newLevel);
+
     document.getElementById('levelupNum').textContent = newLevel;
     const p = Profile.get();
     document.getElementById('levelupExpInfo').textContent =
       `EXP: ${p.exp} / ${ExpSystem.calcNextExp(newLevel)}`;
-    overlay.classList.add('active');
-    SakuraEffect.burst(document.getElementById('levelupParticles'), 40);
 
-    // キャラバウンス
+    // 称号・段階表示
+    const titleEl = document.getElementById('levelupTitle');
+    const stageEl = document.getElementById('levelupStage');
+    if (titleEl) titleEl.textContent = `${titleInfo.stageIcon} ${titleInfo.name}`;
+    if (stageEl) {
+      if (isBorder) {
+        stageEl.textContent = `✨ ${titleInfo.stage} に昇格！`;
+        stageEl.classList.add('stage-promoted');
+      } else {
+        stageEl.textContent = titleInfo.stage;
+        stageEl.classList.remove('stage-promoted');
+      }
+    }
+
+    overlay.classList.add('active');
+    if (isBorder) overlay.classList.add('stage-border');
+    else overlay.classList.remove('stage-border');
+
+    SakuraEffect.burst(document.getElementById('levelupParticles'), isBorder ? 60 : 40);
+
     document.getElementById('characterWrap').classList.add('bounce');
     setTimeout(() => document.getElementById('characterWrap').classList.remove('bounce'), 600);
 
+    const displayTime = isBorder ? 4200 : 3000;
     setTimeout(() => {
-      overlay.classList.remove('active');
+      overlay.classList.remove('active', 'stage-border');
       updateProfileBar();
-    }, 3000);
+    }, displayTime);
   }
 
   // --- 実績解放トースト ---
@@ -1136,6 +1288,53 @@ const UI = (() => {
     document.getElementById('levelUpVolume').value = Math.round(s.levelUpVol * 100);
     document.getElementById('voiceVolume').value = Math.round(s.voiceVol * 100);
     renderCharSelect();
+    renderTitleList();
+  }
+
+  // --- 称号一覧レンダリング ---
+  function renderTitleList() {
+    const container = document.getElementById('titleListContainer');
+    if (!container) return;
+    const p = Profile.get();
+    const allTitles = TitleSystem.getAllForDisplay();
+
+    // 段階ごとにグループ化して表示
+    const stages = [
+      { name: '新人35P',  icon: '🌱', range: [1,  10] },
+      { name: '正式35P',  icon: '🌸', range: [11, 20] },
+      { name: '下級式神', icon: '⛩️', range: [21, 40] },
+      { name: '上級式神', icon: '🔮', range: [41, 70] },
+      { name: '神格式神', icon: '👑', range: [71, 100] },
+    ];
+
+    container.innerHTML = stages.map(stage => {
+      const items = allTitles.filter(t => t.level >= stage.range[0] && t.level <= stage.range[1]);
+      const isCurrentStage = items.some(t => t.level === p.level);
+      const stageUnlocked = p.level >= stage.range[0];
+
+      return `
+        <div class="title-stage-group ${isCurrentStage ? 'current-stage' : ''} ${stageUnlocked ? 'unlocked' : 'locked'}">
+          <div class="title-stage-header">
+            <span class="title-stage-icon">${stage.icon}</span>
+            <span class="title-stage-name">${stage.name}</span>
+            <span class="title-stage-range">Lv.${stage.range[0]}〜${stage.range[1]}</span>
+          </div>
+          <div class="title-items">
+            ${items.map(t => {
+              const isCurrent = t.level === p.level;
+              const isUnlocked = p.level >= t.level;
+              return `
+                <div class="title-item ${isCurrent ? 'title-current' : ''} ${isUnlocked ? 'title-unlocked' : 'title-locked'}">
+                  <span class="title-item-lv">Lv.${t.level}</span>
+                  <span class="title-item-name">${isUnlocked ? t.name : '???'}</span>
+                  ${isCurrent ? '<span class="title-item-now">NOW</span>' : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
   function bindSettingsEvents() {

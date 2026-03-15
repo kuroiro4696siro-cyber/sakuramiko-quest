@@ -150,7 +150,7 @@ input { font-family: inherit; }
   position: fixed; top: 56px; left: 0; right: 0;
   z-index: 90;
   display: flex; align-items: center; gap: 12px;
-  padding: 8px 16px;
+  padding: 6px 16px;
   background: rgba(10, 2, 7, 0.96);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -164,16 +164,31 @@ input { font-family: inherit; }
   border-radius: 20px;
   padding: 4px 10px;
   box-shadow: 0 2px 10px rgba(233,30,99,0.45), inset 0 1px 0 rgba(255,255,255,0.2);
+  flex-shrink: 0;
 }
 .level-label { font-size: 0.7rem; color: rgba(255,255,255,0.9); font-weight: 700; }
 .level-num    { font-family: var(--font-title); font-size: 1.2rem; color: #fff; font-weight: 700; line-height: 1; }
-.exp-area { flex: 1; }
-.exp-text {
-  font-size: 0.7rem;
+.exp-area { flex: 1; min-width: 0; }
+.exp-text-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 6px; margin-bottom: 3px;
+}
+.profile-title-text {
+  font-size: 0.72rem;
+  font-weight: 700;
   color: #ffd0e8;
-  margin-bottom: 3px;
-  font-weight: 600;
   text-shadow: var(--txt-shadow-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.02em;
+}
+.exp-num-text {
+  font-size: 0.68rem;
+  color: rgba(255,200,220,0.80);
+  text-shadow: var(--txt-shadow-soft);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .exp-bar-wrap {
   height: 8px;
@@ -859,11 +874,16 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
 .levelup-bg {
   position: absolute; inset: 0;
   background: radial-gradient(ellipse at center, rgba(233,30,99,0.30) 0%, rgba(0,0,0,0.75) 70%);
+  transition: background 0.5s ease;
+}
+/* 段階昇格時は背景を金色に */
+.levelup-overlay.stage-border .levelup-bg {
+  background: radial-gradient(ellipse at center, rgba(200,160,20,0.40) 0%, rgba(80,20,40,0.80) 70%);
 }
 .levelup-content {
   position: relative; z-index: 1;
   text-align: center;
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
 }
 .levelup-label {
   font-family: var(--font-title);
@@ -885,10 +905,35 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
   line-height: 1;
   text-shadow: 0 0 30px rgba(233,30,99,0.8), 0 0 60px rgba(244,143,177,0.5), var(--txt-shadow-strong);
 }
-.levelup-exp-info {
-  font-size: 0.9rem;
-  color: rgba(255,255,255,0.85);
+/* 称号名 */
+.levelup-title {
+  font-family: var(--font-title);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffd0e8;
+  text-shadow: 0 0 20px rgba(255,160,200,0.7), var(--txt-shadow-strong);
+  letter-spacing: 0.08em;
+  animation: fadeInUp 0.5s ease 0.2s both;
+}
+/* 段階名 */
+.levelup-stage {
+  font-size: 0.85rem;
+  color: rgba(255,220,240,0.80);
   text-shadow: var(--txt-shadow-mid);
+  letter-spacing: 0.1em;
+}
+.levelup-stage.stage-promoted {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  text-shadow: 0 0 20px rgba(245,200,66,0.8), var(--txt-shadow-mid);
+  animation: levelupPulse 0.8s ease infinite alternate;
+}
+.levelup-exp-info {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.75);
+  text-shadow: var(--txt-shadow-mid);
+  margin-top: 4px;
 }
 .levelup-particles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 
@@ -925,6 +970,87 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .quest-card { animation: fadeInUp 0.3s ease backwards; }
+
+/* ===== プロフィール称号ハイライト ===== */
+.title-highlight-row .stat-title-value {
+  font-family: var(--font-title);
+  font-size: 0.95rem;
+  color: #ffd0e8;
+  text-shadow: 0 0 12px rgba(255,160,200,0.6), var(--txt-shadow-soft);
+  letter-spacing: 0.04em;
+}
+
+/* ===== 称号一覧 ===== */
+.title-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.title-stage-group {
+  border: 1px solid rgba(255,140,170,0.18);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.title-stage-group.current-stage {
+  border-color: rgba(255,140,170,0.45);
+  box-shadow: 0 0 12px rgba(233,30,99,0.20);
+}
+.title-stage-group.locked {
+  opacity: 0.45;
+}
+.title-stage-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255,140,170,0.08);
+  border-bottom: 1px solid rgba(255,140,170,0.12);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #ffd0e8;
+  text-shadow: var(--txt-shadow-soft);
+}
+.title-stage-icon  { font-size: 1rem; }
+.title-stage-name  { flex: 1; }
+.title-stage-range { font-size: 0.70rem; color: rgba(220,180,200,0.70); font-weight: 400; }
+.title-items {
+  display: flex;
+  flex-direction: column;
+}
+.title-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.80rem;
+  transition: background var(--transition);
+}
+.title-item:last-child { border-bottom: none; }
+.title-item.title-unlocked { color: rgba(240,220,232,0.88); }
+.title-item.title-locked   { color: rgba(160,130,150,0.50); }
+.title-item.title-current  {
+  background: linear-gradient(90deg, rgba(233,30,99,0.18), rgba(255,64,129,0.08));
+  color: #fff;
+}
+.title-item-lv {
+  font-size: 0.70rem;
+  color: rgba(200,160,180,0.70);
+  min-width: 36px;
+  flex-shrink: 0;
+}
+.title-item.title-current .title-item-lv { color: #ffb0cc; }
+.title-item-name { flex: 1; font-weight: 600; text-shadow: var(--txt-shadow-soft); }
+.title-item-now {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #e91e63, #ff4081);
+  padding: 2px 7px;
+  border-radius: 8px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 6px rgba(233,30,99,0.4);
+  flex-shrink: 0;
+}
 
 /* ===== クエストタブ ===== */
 .quest-tabs {
