@@ -952,6 +952,12 @@ const UI = (() => {
       `;
     }
 
+    // メモ表示
+    const memoHtml = q.memo ? `
+      <div class="detail-section-title">メモ</div>
+      <div class="detail-memo">${escapeHtml(q.memo).replace(/\n/g, '<br>')}</div>
+    ` : '';
+
     container.innerHTML = `
       <div class="detail-title">${escapeHtml(q.title)}</div>
       <div class="detail-meta">
@@ -959,6 +965,7 @@ const UI = (() => {
         ${deadlineHtml}
         <span class="detail-badge">⭐ ${q.exp} EXP</span>
       </div>
+      ${memoHtml}
       ${subquestHtml}
       <div class="detail-actions">
         <button class="complete-quest-btn" id="completeQuestBtn"
@@ -1192,6 +1199,7 @@ const UI = (() => {
     pendingSubquests = [];
     document.getElementById('modalTitle').textContent = '📜 新しいクエスト';
     document.getElementById('questTitleInput').value = '';
+    document.getElementById('questMemoInput').value = '';
     document.getElementById('questDeadlineInput').value = '';
     document.getElementById('questStartInput').value = '';
     document.getElementById('questEndInput').value = '';
@@ -1210,6 +1218,7 @@ const UI = (() => {
     pendingSubquests = q.subquests.map(sq => ({ ...sq }));
     document.getElementById('modalTitle').textContent = '✏️ クエスト編集';
     document.getElementById('questTitleInput').value = q.title;
+    document.getElementById('questMemoInput').value = q.memo || '';
     document.getElementById('questExpInput').value = q.exp;
     setDifficultySelector(q.difficulty || 'normal');
 
@@ -1283,7 +1292,8 @@ const UI = (() => {
   async function saveQuest() {
     const title = document.getElementById('questTitleInput').value.trim();
     if (!title) { showToast('クエスト名を入力してください'); return; }
-    const exp = parseInt(document.getElementById('questExpInput').value) || 50;
+    const exp  = parseInt(document.getElementById('questExpInput').value) || 50;
+    const memo = document.getElementById('questMemoInput').value.trim();
 
     // 期限データの収集
     const mode = document.querySelector('.dl-mode-btn.active')?.dataset.mode || 'single';
@@ -1296,19 +1306,18 @@ const UI = (() => {
       const ev = document.getElementById('questEndInput').value;
       startDate = sv ? new Date(sv).toISOString() : null;
       endDate   = ev ? new Date(ev).toISOString() : null;
-      // 終了日時を "締切" として期限判定にも使う
-      deadline = endDate;
+      deadline  = endDate;
       if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
         showToast('開始日時が終了日時より後になっています'); return;
       }
     }
 
-    const questData = { title, deadline, startDate, endDate, deadlineMode: mode,
+    const questData = { title, memo, deadline, startDate, endDate, deadlineMode: mode,
                         exp, difficulty: getSelectedDifficulty(), subquests: pendingSubquests };
 
     if (editMode && currentQuestId) {
       const q = QuestManager.getById(currentQuestId);
-      Object.assign(q, { title, deadline, startDate, endDate, deadlineMode: mode,
+      Object.assign(q, { title, memo, deadline, startDate, endDate, deadlineMode: mode,
                           exp, difficulty: questData.difficulty });
       const existingMap = {};
       q.subquests.forEach(sq => { existingMap[sq.id] = sq; });
